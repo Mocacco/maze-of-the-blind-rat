@@ -1,57 +1,108 @@
 import asyncio
 import websockets
 import json
+from collections import deque
+import logging
 
-# URL de conexão WebSocket (exemplo)
-WEBSOCKET_URL = "ws://link.pro.handshake.inicial/"
+# Configuração de logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# 1. onectar ao WebSocket e explorar o labirinto
-async def explorar_labirinto():
-    async with websockets.connect(WEBSOCKET_URL) as websocket:
-        print("Conectado ao WebSocket")
+websocket_url = "ws://apigrafos/"
+semaforo = asyncio.Semaphore(10)  # Limite de 10 conexões simultâneas
 
-        # Resposta inicial com os dados do labirinto
-        response = await websocket.recv()
-        labirinto_info = json.loads(response)
-        print(f"Dados do labirinto recebidos: {labirinto_info}")
+init_message = {
+    "GrupoId": "3F4365C5-77F1-405E-A6F2-66BE20521A40", 
+    "LabirintoId": 0,  
+    "Evento": "Ir", 
+    "Entrada": 0 
+}
 
-        # Pegamos o vértice de entrada
-        vertice_atual = labirinto_info.get('Entrada')
-        labirinto_id = labirinto_info.get('LabirintoId')
-        caminho = [vertice_atual]
-        
-        while True:
-            print(f"Vértice atual: {vertice_atual}")
+async def connect_with_retry(url, retries=5, delay=2):
+    for tentativa in range(retries):
+        try:
+            websocket = await websockets.connect(url)
+            return websocket
+        except Exception as e:
+            logging.warning(f"Falha na conexão: {e}. Tentando novamente em {delay} segundos...")
+            await asyncio.sleep(delay)
+    raise ConnectionError("Não foi possível conectar ao WebSocket após várias tentativas.")
 
-            # Comando para ir para um vértice vizinho
-            ir_comando = {
+async def explore_maze():
+    async with semaforo:
+        try:
+            websocket = await connect_with_retry(websocket_url)
+        except ConnectionError as e:
+            logging.error(e)
+            return
+
+        labirinto = {}
+        visitados = set()
+        fila = deque([init_message["Entrada"]])
+
+        await websocket.send(json.dumps(init_message))
+        logging.info("Iniciando exploração do labirinto...")
+
+        while fila:
+            vertice_atual = fila.popleft()
+            if vertice_atual in visitados:
+                continue
+            visitados.add(vertice_atual)
+
+            move_message = {
                 "Evento": "Ir",
                 "VerticeId": vertice_atual
             }
+            await websocket.send(json.dumps(move_message))
+            logging.info(f"Movendo-se para o vértice {vertice_atual}")
 
-            await websocket.send(json.dumps(ir_comando))
-            response = await websocket.recv()
-            dados_vertice = json.loads(response)
-            
-            adjacencia = dados_vertice.get("Adjacencia", [])
-            tipo = dados_vertice.get("Tipo")
+            try:
+                response = await asyncio.wait_for(websocket.recv(), timeout=10)
+            except asyncio.TimeoutError:
+                logging.warning(f"Timeout ao receber resposta para o vértice {vertice_atual}")
+                continue
 
-            # Se o vértice for uma saída
-            if tipo == 1:
-                print(f"Saída encontrada no vértice: {vertice_atual}")
-                caminho.append(vertice_atual)
+            data = json.loads(response)
+            labirinto[vertice_atual] = data.get("Adjacencia", [])
+            logging.info(f"Visitando vértice {vertice_atual} com adjacências: {data.get('Adjacencia', [])}")
+
+            if data.get("Tipo") == 1:
+                logging.info(f"Saída encontrada no vértice {vertice_atual}!")
+                caminho_curto = encontrar_melhor_caminho(labirinto, init_message["Entrada"], vertice_atual)
+                logging.info(f"Melhor caminho para a saída: {caminho_curto}")
                 break
 
-            # Escolhe o próximo vértice de forma simples (o primeiro da adjacência)
-            if adjacencia:
-                vertice_atual = adjacencia[0]
-                caminho.append(vertice_atual)
-            else:
-                print("Sem mais vértices para explorar.")
-                break
+            for vizinho in data.get("Adjacencia", []):
+                if vizinho not in visitados:
+                    fila.append(vizinho)
 
-        print("Caminho percorrido:", caminho)
+        else:
+            logging.info("Exploração completa, sem mais vértices para visitar.")
 
-# Função principal para executar a exploração
+        await websocket.close()
+
+def encontrar_melhor_caminho(labirinto, inicio, saida):
+    fila = deque([[inicio]])
+    visitados = set()
+
+    while fila:
+        caminho = fila.popleft()
+        vertice = caminho[-1]
+
+        if vertice == saida:
+            return caminho
+
+        if vertice not in visitados:
+            visitados.add(vertice)
+            for vizinho in labirinto.get(vertice, []):
+                novo_caminho = list(caminho)
+                novo_caminho.append(vizinho)
+                fila.append(novo_caminho)
+
+    return None  
+
+async def main():
+    tarefas = [explore_maze() for _ in range(100)]  # Exemplo com 100 conexões
+    await asyncio.gather(*tarefas)
+
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(explorar_labirinto())
+    asyncio.run(main())
