@@ -1,0 +1,17 @@
+Lista de coisas para finalizar:
+
+A função de consultar labirintos está com erro (nem o gpt ta sabendo resolver)
+Testar a função de explorar e selecionar os labirintos
+Em caso de erro consertar ou função de explorar o labirinto e ou a função de iniciar desafio
+
+Obs.: Olhei na tabela do banco de dados e o nome do grupo é Grupo Teste e mesmo colocando o nome do grupo quando
+o codigo e executado apresenta o seguinte erro :
+Corpo da resposta ao criar grupo: {"GrupoId":"8659060b-f59c-49fa-a526-7cd22725828c"}
+Grupo criado com ID: 8659060b-f59c-49fa-a526-7cd22725828c
+Corpo da resposta ao consultar labirintos: {"detail":"Grupo não encontrado"}
+Erro ao consultar labirintos: 404, {"detail":"Grupo não encontrado"}
+Labirintos disponíveis:
+Nenhum labirinto disponível para explorar.
+estou louco e não sei resolver.
+
+Lui se vc ver isso e tentar arrumar o codigo e conseguir eu te pago um sorvete
