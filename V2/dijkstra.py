@@ -3,12 +3,12 @@ import asyncio
 import websockets
 import json
 
-API_URL = "https://4145-2804-14c-65a1-83de-3863-e67f-2072-8c62.ngrok-free.app"
+API_URL = "4ea7-2804-14c-65a1-83de-2c23-d166-bf14-1e34.ngrok-free.app"
 
 # Função para criar um grupo
 def criar_grupo(nome):
     payload = {"nome": nome}
-    response = requests.post(f"{API_URL}/grupo", json=payload)
+    response = requests.post(f"http://{API_URL}/grupo", json=payload)
     print("Resposta ao criar grupo:", response.text)
 
     if response.status_code == 200:
@@ -24,7 +24,7 @@ def criar_grupo(nome):
 # Função para listar todos os labirintos disponíveis
 def listar_labirintos():
     print("Listando labirintos disponíveis...")
-    response = requests.get(f"{API_URL}/labirintos")
+    response = requests.get(f"http://{API_URL}/labirintos")
     print("Resposta ao listar labirintos:", response.text)
 
     if response.status_code == 200:
@@ -43,7 +43,7 @@ def gerar_websocket(grupo_id, labirinto_id):
         "grupo_id": grupo_id,
         "labirinto_id": labirinto_id
     }
-    response = requests.post(f"{API_URL}/generate-websocket", json=payload)
+    response = requests.post(f"http://{API_URL}/generate-websocket", json=payload)
     print("Resposta ao gerar WebSocket:", response.text)
 
     if response.status_code == 200:
@@ -102,7 +102,7 @@ def finalizar_labirinto(grupo_id, labirinto_id, caminho):
         "labirinto": labirinto_id,
         "vertices": caminho
     }
-    response = requests.post(f"{API_URL}/resposta", json=payload)
+    response = requests.post(f"http://{API_URL}/resposta", json=payload)
     print("Resposta ao finalizar labirinto:", response.text)
 
     if response.status_code == 200:
