@@ -8,7 +8,7 @@ API_URL = "254f-186-251-61-230.ngrok-free.app"
 
 def listar_labirintos():
     try:
-        response = requests.get(f"http://{API_URL}/labirintos")
+        response = requests.get(f"http://{API_URL}:8000/labirintos")
         if response.status_code == 200:
             labirintos = response.json()
             if isinstance(labirintos, list):
