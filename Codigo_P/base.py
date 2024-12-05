@@ -4,7 +4,7 @@ import asyncio
 import json
 import re
 
-API_URL = "5b05-2804-14c-65a1-83de-2c25-1590-316a-4c70.ngrok-free.app"
+API_URL = "apigrafos.onrender.com/"
 
 def listar_labirintos():
     try:
@@ -28,7 +28,7 @@ def listar_labirintos():
     
 def listar_grupos():
     try:
-        response = requests.get(f"http://{API_URL}/grupos")
+        response = requests.get(f"https://{API_URL}/grupos")
         if response.status_code == 200:
             grupos = response.json()
             if "Grupos" in grupos and isinstance(grupos["Grupos"], list):
@@ -123,7 +123,7 @@ async def explorar_labirinto(websocket_url):
 def gerar_link_websocket(grupo_id, labirinto_id):
     try:
         response = requests.post(
-            f"http://{API_URL}/generate-websocket",
+            f"https://{API_URL}/generate-websocket",
             json={"grupo_id": grupo_id, "labirinto_id": labirinto_id},
         )
         if response.status_code == 200:
@@ -151,7 +151,7 @@ def finalizar_labirinto(grupo_id, labirinto_id, percurso):
         print(f"Enviando dados para finalização: {dados_finalizacao}")  # Log detalhado
 
         response = requests.post(
-            f"http://{API_URL}/resposta",
+            f"https://{API_URL}/resposta",
             json=dados_finalizacao,
         )
 
@@ -165,7 +165,6 @@ def finalizar_labirinto(grupo_id, labirinto_id, percurso):
         
 
 if __name__ == "__main__":
-    
     print("\nListando grupos...")
     listar_grupos()
     grupo_id = input("Digite o ID do grupo: ").strip()
